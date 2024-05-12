@@ -1,3 +1,4 @@
+import 'package:chat_app_web_socket_io/Custom%20UI/AvatarCard.dart';
 import 'package:chat_app_web_socket_io/Custom%20UI/ContactCard.dart';
 import 'package:flutter/material.dart';
 
@@ -125,30 +126,73 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
           ),
         ],
       ),
-      body: ListView.builder(
-          itemCount: chatModel.length,
-          itemBuilder: (context, index) {
-            return InkWell(
-              onTap: () {
-                if (!chatModel[index].select) {
-                  setState(() {
-                    chatModel[index].select = true;
-                    groups.add(chatModel[index]);
-                    print(groups.length);
-                  });
-                } else {
-                  setState(() {
-                    chatModel[index].select = false;
-                    groups.remove(chatModel[index]);
-                    print(groups);
-                  });
+      body: Stack(
+        children: [
+          ListView.builder(
+              itemCount: chatModel.length + 1,
+              itemBuilder: (context, index) {
+                if (index == 0) {
+                  return Container(
+                    height: groups.length > 0 ? 90 : 10,
+                  );
                 }
-              },
-              child: ContactCard(
-                chatModel: chatModel[index],
-              ),
-            );
-          }),
+                return InkWell(
+                  onTap: () {
+                    if (!chatModel[index - 1].select) {
+                      setState(() {
+                        chatModel[index - 1].select = true;
+                        groups.add(chatModel[index - 1]);
+                        print(groups.length);
+                      });
+                    } else {
+                      setState(() {
+                        chatModel[index - 1].select = false;
+                        groups.remove(chatModel[index - 1]);
+                        print(groups);
+                      });
+                    }
+                  },
+                  child: ContactCard(
+                    chatModel: chatModel[index - 1],
+                  ),
+                );
+              }),
+          groups.length > 0
+              ? Column(
+                  children: [
+                    Container(
+                      height: 85,
+                      color: Colors.white,
+                      child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: chatModel.length,
+                          itemBuilder: (context, index) {
+                            if (chatModel[index].select == true) {
+                              return InkWell(
+                                onTap: () {
+                                  setState(() {
+                                    chatModel[index].select = false;
+                                    groups.remove(chatModel[index]);
+                                    print(groups);
+                                  });
+                                },
+                                child: AvatarCard(
+                                  chatModel: chatModel[index],
+                                ),
+                              );
+                            } else {
+                              return Container();
+                            }
+                          }),
+                    ),
+                    Divider(
+                      thickness: 1,
+                    )
+                  ],
+                )
+              : Container(),
+        ],
+      ),
     );
   }
 }
