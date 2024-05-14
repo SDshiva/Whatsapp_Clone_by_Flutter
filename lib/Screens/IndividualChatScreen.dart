@@ -1,3 +1,4 @@
+import 'package:chat_app_web_socket_io/Custom%20UI/ReplyMessageCard.dart';
 import 'package:chat_app_web_socket_io/Models/ChatModel.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/cupertino.dart';
@@ -5,6 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 // import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+
+import '../Custom UI/OwnMessageCard.dart';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 class IndividualChatScreen extends StatefulWidget {
   const IndividualChatScreen({super.key, required this.chatModel});
@@ -18,11 +22,13 @@ class _IndividualChatScreenState extends State<IndividualChatScreen> {
   bool show = false;
   FocusNode focusNode = FocusNode();
   TextEditingController textEditingController = TextEditingController();
+  IO.Socket? socket;
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
+    connect();
     focusNode.addListener(() {
       if (focusNode.hasFocus) {
         setState(() {
@@ -32,202 +38,249 @@ class _IndividualChatScreenState extends State<IndividualChatScreen> {
     });
   }
 
+  void connect() {
+    socket = IO.io("http://192.168.68.26:5000", <String, dynamic>{
+      "transports": ["websocket"],
+      "autoConnect": false,
+    });
+    socket!.connect();
+    socket!.emit("/test", "Hello world");
+    socket!.onConnect(
+      (data) => print("Socket Connected!"),
+    );
+    print(socket!.connected);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.blueGrey,
-      appBar: AppBar(
-        leadingWidth: 80,
-        titleSpacing: 0,
-        leading: Container(
-          padding: const EdgeInsets.only(right: 4, left: 4),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              InkWell(
-                onTap: () {
-                  Navigator.pop(context);
-                },
-                child: Icon(Icons.arrow_back),
+    return Stack(
+      children: [
+        Image.asset(
+          "assets/whatsappBackground.png",
+          height: MediaQuery.of(context).size.height,
+          width: MediaQuery.of(context).size.width,
+          fit: BoxFit.cover,
+        ),
+        Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(
+            leadingWidth: 80,
+            titleSpacing: 0,
+            leading: Container(
+              padding: const EdgeInsets.only(right: 4, left: 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  InkWell(
+                    onTap: () {
+                      Navigator.pop(context);
+                    },
+                    child: Icon(Icons.arrow_back),
+                  ),
+                  CircleAvatar(
+                    child: SvgPicture.asset(
+                      "assets/${widget.chatModel.icon}",
+                      color: Colors.white,
+                      width: 35,
+                      height: 35,
+                    ),
+                    radius: 20,
+                    backgroundColor: Colors.blueGrey,
+                  ),
+                ],
               ),
-              CircleAvatar(
-                child: SvgPicture.asset(
-                  "assets/${widget.chatModel.icon}",
-                  color: Colors.white,
-                  width: 35,
-                  height: 35,
+            ),
+            title: Container(
+              width: 400,
+              margin: EdgeInsets.only(right: 5, left: 5),
+              child: InkWell(
+                onTap: () {},
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Title(
+                      color: Colors.white,
+                      child: Text(widget.chatModel.name!),
+                    ),
+                    Text(
+                      "Last seen today at 14:00",
+                      style: TextStyle(fontSize: 14),
+                    )
+                  ],
                 ),
-                radius: 20,
-                backgroundColor: Colors.blueGrey,
               ),
+            ),
+            actions: [
+              IconButton(onPressed: () {}, icon: Icon(Icons.videocam)),
+              IconButton(onPressed: () {}, icon: Icon(Icons.call)),
+              PopupMenuButton<String>(onSelected: (value) {
+                print(value);
+              }, itemBuilder: (BuildContext context) {
+                return [
+                  PopupMenuItem(
+                    value: "View contact",
+                    child: Text("View contact"),
+                  ),
+                  PopupMenuItem(
+                    value: "Media, links, and docs",
+                    child: Text("Media, links, and docs"),
+                  ),
+                  PopupMenuItem(
+                    value: "Search",
+                    child: Text("Search"),
+                  ),
+                  PopupMenuItem(
+                    value: "Mute notification",
+                    child: Text("Mute notification"),
+                  ),
+                  PopupMenuItem(
+                    value: "Wallpaper",
+                    child: Text("Wallpaper"),
+                  ),
+                ];
+              })
             ],
           ),
-        ),
-        title: Container(
-          width: 400,
-          margin: EdgeInsets.only(right: 5, left: 5),
-          child: InkWell(
-            onTap: () {},
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Title(
-                  color: Colors.white,
-                  child: Text(widget.chatModel.name!),
-                ),
-                Text(
-                  "Last seen today at 14:00",
-                  style: TextStyle(fontSize: 14),
-                )
-              ],
-            ),
-          ),
-        ),
-        actions: [
-          IconButton(onPressed: () {}, icon: Icon(Icons.videocam)),
-          IconButton(onPressed: () {}, icon: Icon(Icons.call)),
-          PopupMenuButton<String>(onSelected: (value) {
-            print(value);
-          }, itemBuilder: (BuildContext context) {
-            return [
-              PopupMenuItem(
-                value: "View contact",
-                child: Text("View contact"),
-              ),
-              PopupMenuItem(
-                value: "Media, links, and docs",
-                child: Text("Media, links, and docs"),
-              ),
-              PopupMenuItem(
-                value: "Search",
-                child: Text("Search"),
-              ),
-              PopupMenuItem(
-                value: "Mute notification",
-                child: Text("Mute notification"),
-              ),
-              PopupMenuItem(
-                value: "Wallpaper",
-                child: Text("Wallpaper"),
-              ),
-            ];
-          })
-        ],
-      ),
-      body: Container(
-        width: MediaQuery.of(context).size.width,
-        height: MediaQuery.of(context).size.height,
-        child: WillPopScope(
-          child: Stack(
-            children: [
-              ListView(),
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Row(
+          body: Container(
+            width: MediaQuery.of(context).size.width,
+            height: MediaQuery.of(context).size.height,
+            child: WillPopScope(
+              child: Stack(
+                children: [
+                  Container(
+                    height: MediaQuery.of(context).size.height - 150,
+                    child: ListView(
+                      shrinkWrap: true,
                       children: [
-                        Container(
-                          width: MediaQuery.of(context).size.width - 60,
-                          child: Card(
-                            margin:
-                                EdgeInsets.only(left: 2, right: 2, bottom: 8),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(25),
-                            ),
-                            child: TextFormField(
-                              focusNode: focusNode,
-                              controller: textEditingController,
-                              textAlignVertical: TextAlignVertical.center,
-                              keyboardType: TextInputType.multiline,
-                              maxLines: 5,
-                              minLines: 1,
-                              decoration: InputDecoration(
-                                border: InputBorder.none,
-                                hintText: "Message",
-                                prefixIcon: IconButton(
-                                  icon: Icon(
-                                    Icons.emoji_emotions,
-                                    color: Color(0xFF075E54),
-                                  ),
-                                  onPressed: () {
-                                    focusNode.unfocus();
-                                    focusNode.canRequestFocus = false;
-                                    setState(() {
-                                      show = !show;
-                                    });
-                                  },
+                        OwnMessageCard(),
+                        ReplyMessageCard(),
+                        OwnMessageCard(),
+                        ReplyMessageCard(),
+                        OwnMessageCard(),
+                        ReplyMessageCard(),
+                        OwnMessageCard(),
+                        ReplyMessageCard(),
+                        OwnMessageCard(),
+                        ReplyMessageCard(),
+                        OwnMessageCard(),
+                        ReplyMessageCard(),
+                        OwnMessageCard(),
+                        ReplyMessageCard(),
+                        OwnMessageCard(),
+                        ReplyMessageCard(),
+                      ],
+                    ),
+                  ),
+                  Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              width: MediaQuery.of(context).size.width - 60,
+                              child: Card(
+                                margin: EdgeInsets.only(
+                                    left: 2, right: 2, bottom: 8),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(25),
                                 ),
-                                suffixIcon: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    IconButton(
+                                child: TextFormField(
+                                  focusNode: focusNode,
+                                  controller: textEditingController,
+                                  textAlignVertical: TextAlignVertical.center,
+                                  keyboardType: TextInputType.multiline,
+                                  maxLines: 5,
+                                  minLines: 1,
+                                  decoration: InputDecoration(
+                                    border: InputBorder.none,
+                                    hintText: "Message",
+                                    prefixIcon: IconButton(
                                       icon: Icon(
-                                        Icons.attach_file,
+                                        Icons.emoji_emotions,
                                         color: Color(0xFF075E54),
                                       ),
                                       onPressed: () {
-                                        showModalBottomSheet(
-                                            backgroundColor: Colors.transparent,
-                                            context: context,
-                                            builder: (builder) =>
-                                                showAttachment());
+                                        focusNode.unfocus();
+                                        focusNode.canRequestFocus = false;
+                                        setState(() {
+                                          show = !show;
+                                        });
                                       },
                                     ),
-                                    IconButton(
-                                      icon: Icon(
-                                        Icons.camera_alt,
-                                        color: Color(0xFF075E54),
-                                      ),
-                                      onPressed: () {},
-                                    )
-                                  ],
+                                    suffixIcon: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          icon: Icon(
+                                            Icons.attach_file,
+                                            color: Color(0xFF075E54),
+                                          ),
+                                          onPressed: () {
+                                            showModalBottomSheet(
+                                                backgroundColor:
+                                                    Colors.transparent,
+                                                context: context,
+                                                builder: (builder) =>
+                                                    showAttachment());
+                                          },
+                                        ),
+                                        IconButton(
+                                          icon: Icon(
+                                            Icons.camera_alt,
+                                            color: Color(0xFF075E54),
+                                          ),
+                                          onPressed: () {},
+                                        )
+                                      ],
+                                    ),
+                                    contentPadding: EdgeInsets.all(5),
+                                  ),
                                 ),
-                                contentPadding: EdgeInsets.all(5),
                               ),
                             ),
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(
-                            bottom: 8,
-                            left: 4,
-                          ),
-                          child: CircleAvatar(
-                            backgroundColor: Color(0xFF075E54),
-                            radius: 25,
-                            child: IconButton(
-                              onPressed: () {},
-                              icon: Icon(
-                                Icons.mic,
-                                color: Colors.white,
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                bottom: 8,
+                                left: 4,
+                              ),
+                              child: CircleAvatar(
+                                backgroundColor: Color(0xFF075E54),
+                                radius: 25,
+                                child: IconButton(
+                                  onPressed: () {},
+                                  icon: Icon(
+                                    Icons.mic,
+                                    color: Colors.white,
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
+                          ],
                         ),
+                        show ? emojiPickerSelect() : Container(),
                       ],
                     ),
-                    show ? emojiPickerSelect() : Container(),
-                  ],
-                ),
-              )
-            ],
+                  )
+                ],
+              ),
+              onWillPop: () {
+                if (show) {
+                  setState(() {
+                    show = false;
+                  });
+                } else {
+                  Navigator.pop(context);
+                }
+                return Future.value(false);
+              },
+            ),
           ),
-          onWillPop: () {
-            if (show) {
-              setState(() {
-                show = false;
-              });
-            } else {
-              Navigator.pop(context);
-            }
-            return Future.value(false);
-          },
         ),
-      ),
+      ],
     );
   }
 
