@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
 class ReplyMessageCard extends StatelessWidget {
-  const ReplyMessageCard({super.key});
+  const ReplyMessageCard({super.key, required this.message});
+  final String message;
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +31,7 @@ class ReplyMessageCard extends StatelessWidget {
                   right: 50,
                 ),
                 child: Text(
-                  "Thank You Bro!!",
+                  message,
                   style: TextStyle(fontSize: 16),
                 ),
               ),

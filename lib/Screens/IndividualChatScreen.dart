@@ -1,5 +1,7 @@
+import 'package:chat_app_web_socket_io/Custom%20UI/OwnMessageCard.dart';
 import 'package:chat_app_web_socket_io/Custom%20UI/ReplyMessageCard.dart';
 import 'package:chat_app_web_socket_io/Models/ChatModel.dart';
+import 'package:chat_app_web_socket_io/Models/MessageModel.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -7,12 +9,13 @@ import 'package:flutter/widgets.dart';
 // import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import '../Custom UI/OwnMessageCard.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 class IndividualChatScreen extends StatefulWidget {
-  const IndividualChatScreen({super.key, required this.chatModel});
+  const IndividualChatScreen(
+      {super.key, required this.chatModel, required this.sourceChat});
   final ChatModel chatModel;
+  final ChatModel sourceChat;
 
   @override
   State<IndividualChatScreen> createState() => _IndividualChatScreenState();
@@ -23,7 +26,8 @@ class _IndividualChatScreenState extends State<IndividualChatScreen> {
   FocusNode focusNode = FocusNode();
   TextEditingController textEditingController = TextEditingController();
   IO.Socket? socket;
-
+  bool sendButton = false;
+  List<MessageModel> messages = [];
   @override
   void initState() {
     // TODO: implement initState
@@ -44,11 +48,34 @@ class _IndividualChatScreenState extends State<IndividualChatScreen> {
       "autoConnect": false,
     });
     socket!.connect();
-    socket!.emit("/test", "Hello world");
-    socket!.onConnect(
-      (data) => print("Socket Connected!"),
-    );
+    socket!.onConnect((data) {
+      print("Socket Connected!");
+      socket!.emit("signIn", widget.sourceChat.id);
+      socket!.on("data", (data) {
+        setMessage("destination", data["message"]);
+        print(data);
+      });
+    });
+
     print(socket!.connected);
+  }
+
+  void sendMessage(String message, int sourceId, int targetId) {
+    setMessage("source", message);
+    socket!.emit(
+      "data",
+      {"message": message, "sourceId": sourceId, "targetId": targetId},
+    );
+    setState(() {
+      textEditingController.clear();
+    });
+  }
+
+  void setMessage(String type, String message) {
+    MessageModel messageModel = MessageModel(type: type, message: message);
+    setState(() {
+      messages.add(messageModel);
+    });
   }
 
   @override
@@ -151,26 +178,18 @@ class _IndividualChatScreenState extends State<IndividualChatScreen> {
                 children: [
                   Container(
                     height: MediaQuery.of(context).size.height - 150,
-                    child: ListView(
+                    child: ListView.builder(
                       shrinkWrap: true,
-                      children: [
-                        OwnMessageCard(),
-                        ReplyMessageCard(),
-                        OwnMessageCard(),
-                        ReplyMessageCard(),
-                        OwnMessageCard(),
-                        ReplyMessageCard(),
-                        OwnMessageCard(),
-                        ReplyMessageCard(),
-                        OwnMessageCard(),
-                        ReplyMessageCard(),
-                        OwnMessageCard(),
-                        ReplyMessageCard(),
-                        OwnMessageCard(),
-                        ReplyMessageCard(),
-                        OwnMessageCard(),
-                        ReplyMessageCard(),
-                      ],
+                      itemCount: messages.length,
+                      itemBuilder: (context, index) {
+                        if (messages[index].type == "source") {
+                          return OwnMessageCard(
+                              message: messages[index].message);
+                        } else {
+                          return ReplyMessageCard(
+                              message: messages[index].message);
+                        }
+                      },
                     ),
                   ),
                   Align(
@@ -195,6 +214,17 @@ class _IndividualChatScreenState extends State<IndividualChatScreen> {
                                   keyboardType: TextInputType.multiline,
                                   maxLines: 5,
                                   minLines: 1,
+                                  onChanged: (value) {
+                                    if (value.length > 0) {
+                                      setState(() {
+                                        sendButton = true;
+                                      });
+                                    } else {
+                                      setState(() {
+                                        sendButton = false;
+                                      });
+                                    }
+                                  },
                                   decoration: InputDecoration(
                                     border: InputBorder.none,
                                     hintText: "Message",
@@ -251,9 +281,17 @@ class _IndividualChatScreenState extends State<IndividualChatScreen> {
                                 backgroundColor: Color(0xFF075E54),
                                 radius: 25,
                                 child: IconButton(
-                                  onPressed: () {},
+                                  onPressed: () {
+                                    if (sendButton) {
+                                      sendMessage(
+                                        textEditingController.text,
+                                        widget.sourceChat.id!,
+                                        widget.chatModel.id!,
+                                      );
+                                    }
+                                  },
                                   icon: Icon(
-                                    Icons.mic,
+                                    sendButton ? Icons.send : Icons.mic,
                                     color: Colors.white,
                                   ),
                                 ),

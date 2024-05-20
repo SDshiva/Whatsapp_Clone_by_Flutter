@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
 class OwnMessageCard extends StatelessWidget {
-  const OwnMessageCard({super.key});
+  const OwnMessageCard({super.key, required this.message});
+  final String message;
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +30,7 @@ class OwnMessageCard extends StatelessWidget {
                   right: 50,
                 ),
                 child: Text(
-                  "Hey SD you did a great job! welldone! Best wishes!",
+                  message,
                   style: TextStyle(fontSize: 16),
                 ),
               ),

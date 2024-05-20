@@ -4,39 +4,16 @@ import 'package:chat_app_web_socket_io/Screens/ContactsScreen.dart';
 import 'package:flutter/material.dart';
 
 class ChatsPage extends StatefulWidget {
-  const ChatsPage({super.key});
+  const ChatsPage(
+      {super.key, required this.chatModels, required this.sourceChat});
+  final List<ChatModel> chatModels;
+  final ChatModel sourceChat;
 
   @override
   State<ChatsPage> createState() => _ChatsPageState();
 }
 
 class _ChatsPageState extends State<ChatsPage> {
-  List<ChatModel> chatModel = [
-    ChatModel(
-        name: "SD shiva",
-        icon: "people.svg",
-        isGroup: false,
-        time: "16:00",
-        currentMessage: "Hey bro, let's meet"),
-    ChatModel(
-        name: "Football",
-        icon: "group.svg",
-        isGroup: true,
-        time: "00:00",
-        currentMessage: "Today is the match day!"),
-    ChatModel(
-        name: "Sajjad Bro",
-        icon: "people.svg",
-        isGroup: false,
-        time: "02:00",
-        currentMessage: "Hey Shibam, when will you come?"),
-    ChatModel(
-        name: "Family",
-        icon: "group.svg",
-        isGroup: true,
-        time: "06:00",
-        currentMessage: "It's time for morning prayer."),
-  ];
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -52,9 +29,10 @@ class _ChatsPageState extends State<ChatsPage> {
         ),
       ),
       body: ListView.builder(
-        itemCount: chatModel.length,
+        itemCount: widget.chatModels.length,
         itemBuilder: (context, index) => CustomCard(
-          chatModel: chatModel[index],
+          chatModel: widget.chatModels[index],
+          sourceChat: widget.sourceChat,
         ),
       ),
     );
